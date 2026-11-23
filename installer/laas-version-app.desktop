@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=LaaS Version App
+Comment=Ouvrir LaaS version app
+Exec=AppRun
+Icon=laas-version-app
+Terminal=false
+Categories=Utility;
+StartupNotify=true

@@ -1,0 +1,124 @@
+name: Construire les installateurs LaaS
+
+# Un seul depôt public : les vrais binaires sont compilés par GitHub, puis
+# publiés dans une Release téléchargeable. Aucun secret n'est nécessaire.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows — setup.exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Installer PyInstaller
+        working-directory: installer
+        run: py -m pip install pyinstaller
+      - name: Compiler le vrai setup.exe
+        working-directory: installer
+        run: py -m PyInstaller --onefile --noconsole --name setup setup.py
+      - name: Vérifier le binaire
+        working-directory: installer
+        shell: pwsh
+        run: |
+          $file = "dist/setup.exe"
+          if (-not (Test-Path $file)) { throw "setup.exe absent" }
+          $bytes = [System.IO.File]::ReadAllBytes($file)[0..1]
+          if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw "En-tête PE invalide" }
+          Get-Item $file | Select-Object Name, Length
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: installer/dist/setup.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  linux:
+    name: Linux — binaire et AppImage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Python, Tkinter et PyInstaller
+        run: |
+          set -eu
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-tk python3-pip
+          python3 -m pip install --user pyinstaller
+      - name: Compiler le binaire autonome
+        working-directory: installer
+        run: python3 -m PyInstaller --onefile --name setup setup.py
+      - name: Construire l'AppImage
+        run: |
+          set -eu
+          mkdir -p AppDir/usr/bin \
+                   AppDir/usr/share/applications \
+                   AppDir/usr/share/icons/hicolor/256x256/apps
+          cp installer/dist/setup AppDir/usr/bin/laas-version-app
+          cp assets/laas-icon.png \
+             AppDir/usr/share/icons/hicolor/256x256/apps/laas-version-app.png
+          cp installer/laas-version-app.desktop \
+             AppDir/usr/share/applications/laas-version-app.desktop
+          cp installer/laas-version-app.desktop AppDir/laas-version-app.desktop
+          printf '%s\n' '#!/bin/sh' 'exec "$APPDIR/usr/bin/laas-version-app" "$@"' > AppDir/AppRun
+          chmod +x AppDir/AppRun AppDir/usr/bin/laas-version-app
+          curl -fsSL -o appimagetool.AppImage \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool.AppImage
+          ./appimagetool.AppImage --appimage-extract-and-run AppDir \
+            LaaS-Version-App-x86_64.AppImage
+          test -s LaaS-Version-App-x86_64.AppImage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: |
+            installer/dist/setup
+            LaaS-Version-App-x86_64.AppImage
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publication des téléchargements
+    needs: [windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Préparer les fichiers et les empreintes
+        run: |
+          set -eu
+          mkdir -p a-publier
+          cp artifacts/windows/setup.exe a-publier/setup.exe
+          cp artifacts/linux/setup a-publier/setup-linux
+          cp artifacts/linux/LaaS-Version-App-x86_64.AppImage a-publier/
+          cd a-publier
+          sha256sum setup.exe setup-linux LaaS-Version-App-x86_64.AppImage > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Créer ou remplacer la Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          tag="$GITHUB_REF_NAME"
+          if [ "$tag" = "main" ]; then tag="latest"; fi
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes
+          fi
+          gh release create "$tag" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "LaaS version app — installateurs ($tag)" \
+            --notes-file RELEASE-NOTES.md \
+            a-publier/setup.exe \
+            a-publier/setup-linux \
+            a-publier/LaaS-Version-App-x86_64.AppImage \
+            a-publier/SHA256SUMS.txt

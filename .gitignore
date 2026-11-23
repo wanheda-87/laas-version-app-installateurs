@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+installer/build/
+installer/dist/
+installer/*.spec
+AppDir/
+appimagetool.AppImage
+a-publier/
+artifacts/
+*.AppImage
+setup-linux
