@@ -66,8 +66,15 @@ jobs:
           $data = Join-Path $env:RUNNER_TEMP 'laas-donnees-essai'
           $app = Join-Path $env:RUNNER_TEMP 'laas-app-essai'
           Remove-Item -Recurse -Force $data,$app -ErrorAction SilentlyContinue
-          & "installer/dist/setup.exe" --headless --data-dir $data --app-dir $app `
-            --account "lecteur@example.invalid:motdepasse-long-1" --no-shortcut
+          $setup = Join-Path $env:GITHUB_WORKSPACE 'installer\dist\setup.exe'
+          $arguments = @(
+            '--headless', '--data-dir', $data, '--app-dir', $app,
+            '--account', 'lecteur@example.invalid:motdepasse-long-1', '--no-shortcut'
+          )
+          # Un exe --noconsole est un programme GUI : PowerShell ne l'attend pas
+          # avec l'appel direct, il faut Start-Process -Wait.
+          $processus = Start-Process -FilePath $setup -ArgumentList $arguments -Wait -PassThru
+          if ($processus.ExitCode -ne 0) { throw "Installation Windows impossible" }
           if (-not (Test-Path (Join-Path $app 'app\laas-version-app.exe'))) {
             throw "L'application n'a pas été installée"
           }
