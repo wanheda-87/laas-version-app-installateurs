@@ -48,6 +48,10 @@ pas à Internet, n’ouvre aucun port et ne demande aucun compte tiers. La reche
 des documents, les rayons, étagères, poches et les thèmes fonctionnent hors ligne. Le
 transcodage vidéo et la console d’administration ne sont pas inclus.
 
+L’installateur extrait temporairement l’application : prévoir environ **1 Go d’espace libre**
+pendant l’installation (le fichier téléchargé fait lui-même environ 230 à 465 Mo selon le
+système).
+
 Sur Linux, l’AppImage contient l’installateur et l’application : au premier clic, l’assistant
 se lance ; aux clics suivants, la bibliothèque s’ouvre directement.
 
