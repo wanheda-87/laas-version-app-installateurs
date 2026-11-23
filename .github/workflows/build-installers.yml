@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Installer PyInstaller et PySide6
-        run: py -m pip install pyinstaller PySide6==6.10.2
+        run: py -m pip install pyinstaller PySide6==6.12.0
       - name: Vérifier les sources sans donnée ni secret
         shell: pwsh
         run: |
@@ -36,8 +36,8 @@ jobs:
         run: >
           py -m PyInstaller --noconfirm --onefile --noconsole
           --name laas-version-app --distpath build-app --workpath build-app-work
-          --specpath build-app-spec --paths app
-          --add-data "app\web;web" app\laas_app.py
+          --specpath build-app-spec --paths "$env:GITHUB_WORKSPACE\app"
+          --add-data "$env:GITHUB_WORKSPACE\app\web;web" app\laas_app.py
       - name: Vérifier l'application Windows
         shell: pwsh
         run: |
@@ -50,7 +50,7 @@ jobs:
         working-directory: installer
         run: >
           py -m PyInstaller --noconfirm --onefile --noconsole --name setup
-          --add-binary "..\build-app\laas-version-app.exe;app" setup.py
+          --add-binary "$env:GITHUB_WORKSPACE\build-app\laas-version-app.exe;app" setup.py
       - name: Vérifier le binaire
         working-directory: installer
         shell: pwsh
@@ -91,7 +91,7 @@ jobs:
           set -eu
           sudo apt-get update
           sudo apt-get install -y python3 python3-tk python3-pip file
-          python3 -m pip install --user pyinstaller PySide6==6.10.2
+          python3 -m pip install --user pyinstaller PySide6==6.12.0
       - name: Aucune donnée ni secret dans les sources
         run: |
           set -eu
@@ -106,14 +106,15 @@ jobs:
           set -eu
           python3 -m PyInstaller --noconfirm --onefile --name laas-version-app \
             --distpath build-app --workpath build-app-work --specpath build-app-spec \
-            --paths app --add-data "app/web:web" app/laas_app.py
+            --paths "$GITHUB_WORKSPACE/app" \
+            --add-data "$GITHUB_WORKSPACE/app/web:web" app/laas_app.py
           file build-app/laas-version-app | grep -q ELF
       - name: Compiler le binaire d'installation avec l'application embarquée
         working-directory: installer
         run: |
           set -eu
           python3 -m PyInstaller --noconfirm --onefile --name setup \
-            --add-binary "../build-app/laas-version-app:app" setup.py
+            --add-binary "$GITHUB_WORKSPACE/build-app/laas-version-app:app" setup.py
           file dist/setup | grep -q ELF
       - name: Essai d'installation réel en clics
         env:
