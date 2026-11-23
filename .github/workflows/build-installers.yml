@@ -59,21 +59,24 @@ jobs:
       - name: Construire l'AppImage
         run: |
           set -eu
-          mkdir -p AppDir/usr/bin \
-                   AppDir/usr/share/applications \
-                   AppDir/usr/share/icons/hicolor/256x256/apps
-          cp installer/dist/setup AppDir/usr/bin/laas-version-app
+          APPDIR="LaaS-Version-App-x86_64.AppDir"
+          mkdir -p "$APPDIR/usr/bin" \
+                   "$APPDIR/usr/share/applications" \
+                   "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+          cp installer/dist/setup "$APPDIR/usr/bin/laas-version-app"
           cp assets/laas-icon.png \
-             AppDir/usr/share/icons/hicolor/256x256/apps/laas-version-app.png
+             "$APPDIR/usr/share/icons/hicolor/256x256/apps/laas-version-app.png"
+          # appimagetool cherche aussi l'icone a la racine de l'AppDir.
+          cp assets/laas-icon.png "$APPDIR/laas-version-app.png"
           cp installer/laas-version-app.desktop \
-             AppDir/usr/share/applications/laas-version-app.desktop
-          cp installer/laas-version-app.desktop AppDir/laas-version-app.desktop
-          printf '%s\n' '#!/bin/sh' 'exec "$APPDIR/usr/bin/laas-version-app" "$@"' > AppDir/AppRun
-          chmod +x AppDir/AppRun AppDir/usr/bin/laas-version-app
+             "$APPDIR/usr/share/applications/laas-version-app.desktop"
+          cp installer/laas-version-app.desktop "$APPDIR/laas-version-app.desktop"
+          printf '%s\n' '#!/bin/sh' 'exec "$APPDIR/usr/bin/laas-version-app" "$@"' > "$APPDIR/AppRun"
+          chmod +x "$APPDIR/AppRun" "$APPDIR/usr/bin/laas-version-app"
           curl -fsSL -o appimagetool.AppImage \
             https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool.AppImage
-          ./appimagetool.AppImage --appimage-extract-and-run AppDir \
+          ./appimagetool.AppImage --appimage-extract-and-run "$APPDIR" \
             LaaS-Version-App-x86_64.AppImage
           test -s LaaS-Version-App-x86_64.AppImage
       - uses: actions/upload-artifact@v4

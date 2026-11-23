@@ -4,6 +4,7 @@ installer/build/
 installer/dist/
 installer/*.spec
 AppDir/
+*.AppDir/
 appimagetool.AppImage
 a-publier/
 artifacts/
