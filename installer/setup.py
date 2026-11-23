@@ -64,6 +64,12 @@ def run_headless(args: argparse.Namespace) -> int:
     print(f"Marqueur : {info['marker']}")
     if info["launcher"]:
         print(f"Lanceur : {info['launcher']}")
+    application = info["app"]
+    if application["status"] == "installed":
+        print(f"Application : {application['path']}")
+    elif application["status"] == "absent":
+        print("Application : binaire non embarqué dans cet installateur.", file=sys.stderr)
+    print(f"Configuration : {info['config']}")
     shortcut = info["shortcut"]
     if shortcut["status"] == "created":
         print(f"Raccourci : {shortcut['path']}")
@@ -235,6 +241,10 @@ def run_gui(args: argparse.Namespace) -> int:
             elif self.step == 4:
                 self.heading("Vérification")
                 self.paragraph("Base : " + str(Path(self.data_dir.get()) / setup_core.DB_NAME))
+                self.paragraph(
+                    "L'application sera installée et le raccourci l'ouvrira directement.",
+                    bold=True,
+                )
                 if not args.no_launcher and not args.no_shortcut:
                     self.paragraph(
                         "Un raccourci « LaaS Version App » sera créé automatiquement.",
@@ -255,6 +265,14 @@ def run_gui(args: argparse.Namespace) -> int:
                 self.paragraph("Marqueur : " + self.info.get("marker", ""))
                 if self.info.get("launcher"):
                     self.paragraph("Lanceur : " + self.info["launcher"])
+                application = self.info.get("app", {})
+                if application.get("status") == "installed":
+                    self.paragraph("Application : " + application["path"], bold=True)
+                elif application.get("status") == "absent":
+                    self.paragraph(
+                        "Attention : binaire applicatif non embarqué dans cet installateur.",
+                        danger=True,
+                    )
                 shortcut = self.info.get("shortcut", {})
                 if shortcut.get("status") == "created":
                     self.paragraph("Raccourci : " + shortcut["path"], bold=True)

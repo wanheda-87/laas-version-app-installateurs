@@ -24,12 +24,11 @@ WINDOWS_LAUNCHER_TEMPLATE = """@echo off
 setlocal
 set "APP=%~dp0app\\laas-version-app.exe"
 if exist "%APP%" (
-  start "" "%APP%"
-) else (
-  echo L'application n'est pas encore presente dans le dossier app.
-  pause
+  start "" "%APP%" %*
+  exit /b 0
 )
-endlocal
+echo Application introuvable : %APP% 1>&2
+exit /b 1
 """
 
 LINUX_ICON_NAME = "laas-icon.png"
@@ -40,9 +39,13 @@ LINUX_LAUNCHER_TEMPLATE = """#!/bin/sh
 set -eu
 APP="$(dirname "$0")/app/laas-version-app"
 if [ -x "$APP" ]; then
+  # Nécessaire pour WebEngine dans une AppImage ou un environnement sans
+  # espace utilisateur autorisé ; aucun réseau, aucun port, aucun serveur.
+  QTWEBENGINE_DISABLE_SANDBOX="${QTWEBENGINE_DISABLE_SANDBOX:-1}"
+  export QTWEBENGINE_DISABLE_SANDBOX
   exec "$APP" "$@"
 fi
-echo "L'application n'est pas encore presente dans le dossier app."
+echo "Application introuvable : $APP" >&2
 exit 1
 """
 

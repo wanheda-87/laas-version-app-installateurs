@@ -25,6 +25,13 @@ class DesktopShortcutTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory(prefix="laas-raccourci-test-")
         self.root = Path(self.temp.name)
+        # Aucun test ne doit écrire dans la configuration réelle de l'utilisateur.
+        environnement = mock.patch.dict(os.environ, {
+            "XDG_CONFIG_HOME": str(self.root / "config"),
+            "APPDATA": str(self.root / "appdata"),
+        })
+        environnement.start()
+        self.addCleanup(environnement.stop)
 
     def tearDown(self) -> None:
         self.temp.cleanup()

@@ -1,0 +1,246 @@
+/* ============================================================
+   hig-foundation.css — socle visuel commun (contrat SL-1 §C1 + Apple HIG)
+   Version 1.0 — 23 novembre 2026
+
+   Sources :
+     - https://developer.apple.com/design/human-interface-guidelines/materials
+     - https://developer.apple.com/design/human-interface-guidelines/accessibility
+     - Contrat SL-1 §C1 du plan maître LaaS (identique dans les quatre plans)
+
+   CSS autonome : aucune dépendance, aucune police distante, aucun CDN,
+   aucun appel réseau, aucune donnée utilisateur touchée.
+
+   Principe HIG : le « verre » (Liquid Glass) reste réservé à la navigation
+   et aux contrôles. La couche de contenu — documents, chiffres, graphiques,
+   formulaires — reste opaque ou quasi opaque (SL-1 C1).
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   1. Jetons — réévalués pour chaque thème
+   Les applications utilisent html.light, .light ou [data-theme="light"].
+   Les variables d'origine restent la source de vérité : aucun thème existant
+   n'est écrasé, on ajoute seulement des alias partagés.
+   ------------------------------------------------------------ */
+:root,
+html.light,
+.light,
+[data-theme="light"] {
+  --hig-canvas:    var(--bg-canvas, var(--canvas, var(--bg, var(--color-bg, var(--sl-bg, #111216)))));
+  --hig-surface:   var(--bg-surface, var(--surface, var(--panel, var(--color-surface, var(--sl-surface, #1b1d23)))));
+  --hig-raised:    var(--bg-elevated, var(--raised, var(--color-surface-raised, var(--sl-raised, #242730))));
+  --hig-label:     var(--text-primary, var(--text, var(--color-text, var(--sl-text, #f5f5f7))));
+  --hig-label-2:   var(--text-secondary, var(--muted, var(--color-text-secondary, var(--sl-muted, #b6bac5))));
+  --hig-label-3:   var(--text-muted, var(--quiet, var(--color-text-muted, var(--sl-muted, #9aa1ae))));
+  --hig-separator: var(--border-subtle, var(--line, var(--color-border, var(--sl-line, rgba(255,255,255,.14)))));
+  --hig-focus:     var(--accent-primary, var(--blue, var(--color-accent, var(--sl-focus, #88b9ff))));
+
+  --hig-blur-ultra-thin: 12px;
+  --hig-blur-thin:       20px;
+  --hig-blur-regular:    28px;
+  --hig-blur-thick:      36px;
+  --hig-blur-glass:      28px;
+  --hig-saturate:        200%;
+
+  --hig-ultra-thin: color-mix(in srgb, var(--hig-surface) 45%, transparent);
+  --hig-thin:       color-mix(in srgb, var(--hig-surface) 58%, transparent);
+  --hig-regular:    color-mix(in srgb, var(--hig-surface) 72%, transparent);
+  --hig-thick:      color-mix(in srgb, var(--hig-surface) 86%, transparent);
+  --hig-glass:      color-mix(in srgb, var(--hig-surface) 66%, transparent);
+
+  --hig-highlight: inset 0 1px 0 rgba(255,255,255,.10);
+  --hig-shadow:    0 12px 40px rgba(0,0,0,.28);
+  --hig-radius:    18px;
+  --hig-target:    44px;      /* cible tactile recommandée (WCAG 2.2 AA renforcé) */
+  --hig-focus-width: 3px;
+}
+/* Note : les variables d'application existantes restent la source de vérité.
+   Aucun alias --sl-* n'est redéfini ici pour éviter une référence circulaire
+   (--hig-* -> --sl-* -> --hig-*) qui rendrait les jetons invalides. */
+
+html.light,
+.light,
+[data-theme="light"] {
+  --hig-highlight: inset 0 1px 0 rgba(255,255,255,.80);
+  --hig-shadow:    0 12px 40px rgba(15,23,42,.14);
+}
+
+/* ------------------------------------------------------------
+   2. Matériaux
+   ------------------------------------------------------------ */
+
+/* Liquid Glass : navigation, barres d'outils, contrôles flottants uniquement.
+   Pas de bordure ici, afin de respecter les bordures existantes des apps. */
+.hig-glass {
+  background: var(--hig-glass);
+  -webkit-backdrop-filter: blur(var(--hig-blur-glass)) saturate(var(--hig-saturate));
+  backdrop-filter: blur(var(--hig-blur-glass)) saturate(var(--hig-saturate));
+  box-shadow: var(--hig-highlight), var(--hig-shadow);
+}
+
+/* Matériaux standard : panneaux et dialogues. */
+.hig-material-ultra-thin,
+.hig-material-thin,
+.hig-material-regular,
+.hig-material-thick {
+  border: 1px solid var(--hig-separator);
+  border-radius: var(--hig-radius);
+  box-shadow: var(--hig-highlight);
+}
+.hig-material-ultra-thin {
+  background: var(--hig-ultra-thin);
+  -webkit-backdrop-filter: blur(var(--hig-blur-ultra-thin)) saturate(var(--hig-saturate));
+  backdrop-filter: blur(var(--hig-blur-ultra-thin)) saturate(var(--hig-saturate));
+}
+.hig-material-thin {
+  background: var(--hig-thin);
+  -webkit-backdrop-filter: blur(var(--hig-blur-thin)) saturate(var(--hig-saturate));
+  backdrop-filter: blur(var(--hig-blur-thin)) saturate(var(--hig-saturate));
+}
+.hig-material-regular {
+  background: var(--hig-regular);
+  -webkit-backdrop-filter: blur(var(--hig-blur-regular)) saturate(var(--hig-saturate));
+  backdrop-filter: blur(var(--hig-blur-regular)) saturate(var(--hig-saturate));
+}
+.hig-material-thick {
+  background: var(--hig-thick);
+  -webkit-backdrop-filter: blur(var(--hig-blur-thick)) saturate(var(--hig-saturate));
+  backdrop-filter: blur(var(--hig-blur-thick)) saturate(var(--hig-saturate));
+}
+
+/* Contenu souverain : jamais de transparence sur documents/chiffres/graphiques. */
+.hig-opaque {
+  background: var(--hig-surface) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Vibrance : textes lisibles sur les matériaux, sans couleur seule. */
+.hig-label           { color: var(--hig-label); }
+.hig-label-secondary { color: var(--hig-label-2); }
+.hig-label-tertiary  { color: var(--hig-label-3); }
+
+/* ------------------------------------------------------------
+   3. Accessibilité
+   ------------------------------------------------------------ */
+
+/* Focus clavier toujours visible (WCAG 2.4.7 / 2.4.11). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible,
+[role="button"]:focus-visible {
+  outline: var(--hig-focus-width) solid var(--hig-focus);
+  outline-offset: 2px;
+}
+
+/* Cibles tactiles : ~44 px au doigt, 28 px minimum à la souris. */
+@media (pointer: coarse) {
+  button,
+  select,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  textarea,
+  summary,
+  [role="button"],
+  [role="checkbox"],
+  [role="switch"] {
+    min-height: var(--hig-target);
+  }
+  button,
+  [role="button"],
+  [role="checkbox"],
+  [role="switch"] {
+    min-width: var(--hig-target);
+  }
+}
+@media (pointer: fine) {
+  button,
+  select,
+  [role="button"] {
+    min-height: 28px;
+  }
+}
+
+/* Mouvement réduit : aucune animation automatique, aucun flou animé. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hig-glass,
+  .hig-material-ultra-thin,
+  .hig-material-thin,
+  .hig-material-regular,
+  .hig-material-thick {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Contraste renforcé : matériaux opaques et bordures épaisses. */
+@media (prefers-contrast: more) {
+  :root, html.light, .light, [data-theme="light"] {
+    --hig-ultra-thin: var(--hig-surface);
+    --hig-thin:       var(--hig-surface);
+    --hig-regular:    var(--hig-surface);
+    --hig-thick:      var(--hig-surface);
+    --hig-glass:      var(--hig-surface);
+    --hig-separator:  currentColor;
+    --hig-focus-width: 4px;
+  }
+  .hig-glass,
+  .hig-material-ultra-thin,
+  .hig-material-thin,
+  .hig-material-regular,
+  .hig-material-thick {
+    border-width: 2px;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Transparence réduite (réglage explicite demandé par SL-1 C1). */
+@media (prefers-reduced-transparency: reduce) {
+  .hig-glass,
+  .hig-material-ultra-thin,
+  .hig-material-thin,
+  .hig-material-regular,
+  .hig-material-thick {
+    background: var(--hig-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Couleurs forcées / technologies d'assistance. */
+@media (forced-colors: active) {
+  .hig-glass,
+  .hig-material-ultra-thin,
+  .hig-material-thin,
+  .hig-material-regular,
+  .hig-material-thick {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid CanvasText;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    forced-color-adjust: auto;
+  }
+}
+
+/* Un état n'est jamais communiqué par la couleur seule (HIG vision). */
+.hig-status::before {
+  content: "";
+  display: inline-block;
+  width: .55em;
+  height: .55em;
+  margin-right: .45em;
+  border: 1px solid currentColor;
+}
+.hig-status--ok::before   { border-radius: 50%; }
+.hig-status--warn::before { border-radius: 2px; transform: rotate(45deg); }
+.hig-status--error::before{ border-radius: 0; }

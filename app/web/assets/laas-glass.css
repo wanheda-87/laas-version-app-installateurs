@@ -1,0 +1,444 @@
+/* ============================================================
+   laas-glass.css — coques vitrées du centre LaaS
+   23 novembre 2026 — CSS autonome, aucune dépendance réseau.
+
+   S'installe APRÈS hig-foundation.css et ios-foundation.css.
+   Demande utilisateur : « le milieu reste trop plat, sans verre ».
+
+   SL-1 §C1 conservé : le verre habille les COQUES de cartes ;
+   les documents, chiffres et libellés restent sur des surfaces
+   opaques ou quasi opaques, jamais rendus transparents.
+   ============================================================ */
+
+:root {
+  --laas-glass:       rgba(24, 28, 40, .52);
+  --laas-glass-strong:rgba(20, 24, 34, .68);
+  --laas-edge-hi:     rgba(255, 255, 255, .35);
+  --laas-edge-lo:     rgba(255, 255, 255, .05);
+  --laas-shadow:      0 20px 40px rgba(0,0,0,.25),
+                      0 4px 14px rgba(0,0,0,.18),
+                      inset 0 1px 0 rgba(255,255,255,.22);
+}
+html.light, .light {
+  --laas-glass:       rgba(255, 255, 255, .38);
+  --laas-glass-strong:rgba(255, 255, 255, .56);
+  --laas-edge-hi:     rgba(255, 255, 255, .80);
+  --laas-edge-lo:     rgba(255, 255, 255, .18);
+  --laas-shadow:      0 20px 40px rgba(4,8,24,.18),
+                      0 4px 14px rgba(4,8,24,.10),
+                      inset 0 1px 0 rgba(255,255,255,.75);
+}
+
+/* Fond spatial : le verre n'apparaît que s'il y a de la couleur
+   derrière lui. Dégradés bleu / violet / magenta, purement CSS. */
+body {
+  background:
+    radial-gradient(ellipse 62% 58% at 6% 2%, rgba(29, 78, 216, .40), transparent 72%),
+    radial-gradient(ellipse 58% 52% at 96% 10%, rgba(124, 58, 237, .36), transparent 72%),
+    radial-gradient(ellipse 72% 58% at 55% 106%, rgba(190, 24, 93, .24), transparent 70%),
+    var(--canvas, #08090c);
+  background-attachment: fixed;
+}
+html.light body, .light body {
+  background:
+    radial-gradient(ellipse 62% 58% at 6% 2%, rgba(147, 197, 253, .70), transparent 72%),
+    radial-gradient(ellipse 58% 52% at 96% 10%, rgba(216, 180, 254, .66), transparent 72%),
+    radial-gradient(ellipse 72% 58% at 55% 106%, rgba(251, 207, 232, .55), transparent 70%),
+    var(--canvas, #f5f6f8);
+}
+
+/* Coques vitrées : reflet radial qui suit le curseur + flou lourd.
+   Inclut le centre de contrôle / administration (LaaS). */
+.welcome-card,
+.metric-card,
+.region-card,
+.recent-list,
+.shelf-panel,
+.summary-stats article,
+.summary-region,
+.empty-state,
+.admin-metric,
+.admin-panel,
+.admin-chart-panel,
+.admin-console,
+.admin-storage-card,
+.storage-card {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(420px circle at var(--ios-x, 50%) var(--ios-y, 0%),
+      rgba(255,255,255,.10), transparent 46%),
+    var(--laas-glass);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: var(--laas-shadow);
+  transition: transform .42s var(--ios-spring), box-shadow .42s var(--ios-spring), border-color .42s var(--ios-spring);
+}
+
+/* Biseau spéculaire 1px, dégradé blanc haut/gauche. */
+.welcome-card::before,
+.metric-card::before,
+.region-card::before,
+.recent-list::before,
+.shelf-panel::before,
+.summary-stats article::before,
+.summary-region::before,
+.empty-state::before,
+.admin-metric::before,
+.admin-panel::before,
+.admin-chart-panel::before,
+.admin-console::before,
+.admin-storage-card::before,
+.storage-card::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit; padding: 1px;
+  background: linear-gradient(135deg,
+    var(--laas-edge-hi), var(--laas-edge-lo) 38%, transparent 62%,
+    color-mix(in srgb, var(--laas-edge-hi) 40%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none; z-index: 3;
+}
+
+/* Survol ressort : les cartes se soulèvent légèrement. */
+.region-card:hover,
+.shelf-panel:hover,
+.metric-card:hover { transform: translateY(-4px) scale(1.005); }
+
+/* En-têtes d'étagères : verre plus dense que la coque. */
+.shelf-head {
+  background:
+    radial-gradient(300px circle at var(--ios-x, 50%) var(--ios-y, 0%),
+      rgba(255,255,255,.08), transparent 45%),
+    var(--laas-glass-strong);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+}
+
+/* Contenu souverain : chiffres et données sur surface opaque. */
+.metric-big,
+.summary-stats strong,
+.admin-count,
+.admin-value {
+  background: rgba(8, 9, 12, .62);
+  border-radius: 8px;
+  padding: 2px 7px;
+  display: inline-block;
+}
+html.light .metric-big,
+html.light .summary-stats strong,
+.light .metric-big,
+.light .summary-stats strong,
+html.light .admin-count, html.light .admin-value,
+.light .admin-count, .light .admin-value { background: rgba(255,255,255,.82); }
+
+/* Console « explorateur » : typographie monospace soignée, sans toucher aux données. */
+.admin-console {
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  font-variant-ligatures: contextual;
+  font-feature-settings: "calt" 1;
+}
+.admin-console .console-header { padding: 14px 20px; }
+.admin-console .eyebrow {
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--hig-secondary-label, #a8b0c0);
+}
+.admin-console h2 {
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  margin-top: 3px;
+}
+.console-output {
+  font-family: inherit !important;
+  font-size: 12.5px !important;
+  line-height: 1.85 !important;
+  letter-spacing: .005em;
+  tab-size: 2;
+  color: #d7e0d0;
+  text-shadow: 0 1px 0 rgba(0,0,0,.25);
+  scrollbar-color: rgba(255,255,255,.18) transparent;
+  scrollbar-width: thin;
+}
+.console-line { padding-left: 2px; }
+.console-line + .console-line { margin-top: 1px; }
+.console-command {
+  color: #ffd88a;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.console-directory { color: #a9caff; letter-spacing: .04em; }
+.console-tree-heading {
+  font-family: inherit;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-size: 10px !important;
+}
+.console-ok { color: #a5e08b; font-weight: 600; }
+.console-error { color: #ff9c84; font-weight: 600; }
+.console-muted { color: #84958c; font-style: italic; }
+.console-input-row {
+  font-family: inherit;
+  background: rgba(8, 12, 9, .86);
+  border-top: 1px solid rgba(165,124,73,.28);
+}
+.console-input-row > span {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  color: #ffd88a;
+  white-space: nowrap;
+}
+.console-input-row > span b { color: rgba(255,216,138,.55); font-weight: 400; }
+.console-input-row input {
+  font-family: inherit;
+  font-size: 12.5px;
+  color: #e8f0e4;
+  caret-color: #ffd88a;
+  letter-spacing: .01em;
+}
+.console-input-row input::placeholder { color: #7c8b80; font-style: italic; }
+.console-input-row input:focus-visible {
+  outline: 2px solid rgba(255,216,138,.75);
+  outline-offset: -2px;
+}
+.console-input-row button {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+.admin-console footer {
+  font-family: inherit;
+  font-size: 10.5px;
+  line-height: 1.55;
+  letter-spacing: .01em;
+  color: #93a094;
+}
+.console-reopen {
+  font-family: inherit;
+  letter-spacing: .04em;
+}
+@media (prefers-contrast: more) {
+  .console-output { color: #f4fff0; text-shadow: none; }
+  .console-command { color: #ffe6a8; }
+  .console-directory { color: #cfe2ff; }
+  .console-ok { color: #c7ffae; }
+  .console-error { color: #ffc0b0; }
+}
+
+.doc-row,
+.shelf-documents {
+  background: rgba(8, 9, 12, .54);
+}
+html.light .doc-row,
+html.light .shelf-documents,
+.light .doc-row,
+.light .shelf-documents { background: rgba(255,255,255,.70); }
+
+/* Icônes squircle (courbe continue approximée par 22 %). */
+.region-symbol,
+.shelf-icon,
+.file-icon,
+.brand-mark {
+  border-radius: 22%;
+  box-shadow: 0 8px 18px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.24);
+}
+
+/* ------------------------------------------------------------
+   Lecteur de documents : la lecture aussi est en verre.
+   Le PDF reste sur une page blanche opaque (SL-1 §C1) ; ce sont
+   la coque, la barre d'outils et les contrôles qui sont vitrés.
+   ------------------------------------------------------------ */
+.laas-file-viewer {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(23,29,41,.62), rgba(9,11,16,.76) 58%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.10),
+              0 30px 80px rgba(0,0,0,.45);
+}
+
+.laas-file-viewer .file-viewer-toolbar {
+  position: relative;
+  isolation: isolate;
+  min-height: 72px;
+  background:
+    radial-gradient(420px circle at var(--ios-x, 50%) var(--ios-y, 0%),
+      rgba(255,255,255,.12), transparent 48%),
+    var(--laas-glass-strong);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 12px 34px rgba(0,0,0,.34),
+              inset 0 1px 0 rgba(255,255,255,.28);
+}
+.laas-file-viewer .file-viewer-toolbar::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit; padding: 1px;
+  background: linear-gradient(135deg,
+    var(--laas-edge-hi), var(--laas-edge-lo) 38%, transparent 62%,
+    color-mix(in srgb, var(--laas-edge-hi) 40%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none; z-index: 3;
+}
+
+/* Scène de lecture : fond sombre opaque, le document reste net. */
+.laas-file-viewer .file-viewer-stage {
+  background: radial-gradient(ellipse at 50% 40%, rgba(18,22,33,.92), rgba(8,10,15,.96) 70%);
+}
+
+/* Contrôles iOS : cibles 44 pt, pilules de verre, squircle. */
+.file-viewer-back,
+.file-viewer-close,
+.file-viewer-download,
+.file-viewer-zoom button,
+.file-viewer-actions button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  background: var(--laas-glass);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  box-shadow: 0 8px 20px rgba(0,0,0,.26),
+              inset 0 1px 0 rgba(255,255,255,.22);
+  color: var(--hig-label, #f5f7fa);
+  font: inherit;
+  cursor: pointer;
+  transition: transform .42s var(--ios-spring), filter .42s var(--ios-spring);
+}
+.file-viewer-back,
+.file-viewer-download { display: grid; place-items: center; padding: 8px; }
+.file-viewer-back:hover,
+.file-viewer-close:hover,
+.file-viewer-download:hover,
+.file-viewer-zoom button:hover,
+.file-viewer-actions button:hover {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+}
+.file-viewer-zoom output {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(8,9,12,.62);
+  color: var(--hig-label, #f5f7fa);
+  font-variant-numeric: tabular-nums;
+}
+.file-viewer-kicker {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ios-blue, #0a84ff) 24%, transparent);
+  color: var(--hig-label, #f5f7fa);
+}
+.file-viewer-image-wrap,
+.file-viewer-image {
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.45),
+              inset 0 1px 0 rgba(255,255,255,.18);
+}
+html.light .file-viewer-zoom output { background: rgba(255,255,255,.82); }
+
+/* Accessibilité : le verre ne supprime aucun focus ni contraste. */
+:where(.welcome-card, .metric-card, .region-card, .shelf-panel):focus-visible {
+  outline: 3px solid var(--ios-blue, #0a84ff);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .region-card:hover, .shelf-panel:hover, .metric-card:hover { transform: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .welcome-card, .metric-card, .region-card, .recent-list, .shelf-panel,
+  .summary-stats article, .summary-region, .empty-state, .shelf-head,
+  .admin-metric, .admin-panel, .admin-chart-panel, .admin-console,
+  .admin-storage-card, .storage-card {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--hig-raised, #171a21);
+  }
+  .welcome-card::before, .metric-card::before, .region-card::before,
+  .recent-list::before, .shelf-panel::before, .summary-stats article::before,
+  .summary-region::before, .empty-state::before,
+  .admin-metric::before, .admin-panel::before, .admin-chart-panel::before,
+  .admin-console::before, .admin-storage-card::before, .storage-card::before { display: none; }
+}
+@media (prefers-contrast: more) {
+  .welcome-card, .metric-card, .region-card, .recent-list, .shelf-panel,
+  .summary-stats article, .summary-region, .empty-state,
+  .admin-metric, .admin-panel, .admin-chart-panel, .admin-console,
+  .admin-storage-card, .storage-card { border: 2px solid var(--hig-label, #f5f7fa); }
+}
+@media (forced-colors: active) {
+  .welcome-card, .metric-card, .region-card, .recent-list, .shelf-panel,
+  .summary-stats article, .summary-region, .empty-state, .shelf-head,
+  .admin-metric, .admin-panel, .admin-chart-panel, .admin-console,
+  .admin-storage-card, .storage-card {
+    background: Canvas !important;
+    border: 1px solid CanvasText !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .welcome-card::before, .metric-card::before, .region-card::before,
+  .recent-list::before, .shelf-panel::before, .summary-stats article::before,
+  .summary-region::before, .empty-state::before,
+  .admin-metric::before, .admin-panel::before, .admin-chart-panel::before,
+  .admin-console::before, .admin-storage-card::before, .storage-card::before { display: none; }
+}
+
+/* ------------------------------------------------------------
+   Visualiseur sur téléphone : la barre d'outils passe sur deux
+   lignes et les libellés superflus disparaissent. Sans cela, les
+   contrôles dépassaient de 57 px à 390 px (bouton Fermer coupé).
+   Ces règles sont en fin de feuille : laas-glass.css est chargé
+   après style.css et doit reprendre la main sur ses propres 44 px.
+   ------------------------------------------------------------ */
+@media (max-width:700px) {
+  #modal:has(.laas-file-viewer) .file-viewer-toolbar {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-height: 0;
+    padding: 8px 10px;
+  }
+  .file-viewer-identity { flex: 1 1 100%; min-width: 0; gap: 7px; }
+  .file-viewer-file { flex: 1 1 auto; min-width: 0; }
+  .file-viewer-file strong,
+  .file-viewer-file small {
+    width: 100%; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .file-viewer-kicker { display: none; }
+  .file-viewer-actions { flex: 0 0 100%; min-width: 0; justify-content: space-between; gap: 6px; }
+  .file-viewer-zoom { flex: 1 1 auto; min-width: 0; justify-content: center; gap: 2px; padding: 2px; }
+  .file-viewer-zoom button,
+  .file-viewer-zoom output { flex: 1 1 0; min-width: 0; min-height: 34px; padding: 0 4px; overflow: hidden; }
+  .file-viewer-zoom button[data-viewer-fit] { flex: 1.4 1 0; min-width: 0; font-size: 9px; }
+  .file-viewer-back,
+  .file-viewer-actions button,
+  .file-viewer-download {
+    flex: 0 0 34px; min-width: 34px; min-height: 34px; height: 34px; padding: 0;
+  }
+  .file-viewer-actions .file-viewer-close { width: 34px; gap: 0; font-size: 0; }
+  .file-viewer-close span { font-size: 18px; }
+  .file-viewer-stage { width: 100%; min-width: 0; }
+}
+@media (max-width:360px) {
+  .file-viewer-file small { display: none; }
+}

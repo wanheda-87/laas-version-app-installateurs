@@ -15,8 +15,11 @@ import json
 import os
 import re
 import secrets
+import shutil
 import sqlite3
+import sys
 import uuid
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -25,6 +28,8 @@ import desktop_shortcut
 MARKER_NAME = "library-id.json"
 MARKER_SCHEMA_VERSION = 1
 DB_NAME = "laas.sqlite3"
+CONFIG_NAME = "paths.json"
+APP_BINARY_NAME = "laas-version-app.exe" if os.name == "nt" else "laas-version-app"
 PBKDF2_ROUNDS = 310_000
 SALT_BYTES = 16
 MIN_PASSWORD_LENGTH = 10
@@ -47,6 +52,83 @@ def path_or_default(value: str | Path | None, fallback) -> Path:
     """Un champ laissé vide retombe sur son emplacement par défaut."""
     raw = str(value or "").strip()
     return Path(raw).expanduser() if raw else fallback()
+
+
+def _resolve_app_source(source: str | Path | None = None) -> Path | None:
+    """Trouve le vrai binaire applicatif embarqué dans l'installateur compilé.
+
+    En développement, le binaire n'existe pas encore : l'installation de la base
+    reste possible pour les tests. Dans un binaire PyInstaller, son absence est
+    une erreur bloquante (voir ``install``).
+    """
+    if source is not None:
+        candidate = Path(source).expanduser()
+        return candidate if candidate.is_file() else None
+    candidates: list[Path] = []
+    meipass = str(getattr(sys, "_MEIPASS", "") or "")
+    if meipass:
+        candidates.append(Path(meipass) / "app" / APP_BINARY_NAME)
+    root = Path(__file__).resolve().parent.parent
+    candidates.append(root / "app" / APP_BINARY_NAME)
+    candidates.append(root / "app" / "dist" / APP_BINARY_NAME)
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def install_app(
+    app_dir: str | Path | None,
+    *,
+    source: str | Path | None = None,
+    required: bool = False,
+) -> dict:
+    """Copie le binaire applicatif dans ``<app_dir>/app``, sans écraser de données.
+
+    Seul le fichier de l'application peut être remplacé lors d'une réparation
+    explicite ; ici, un binaire déjà présent est conservé tel quel.
+    """
+    if app_dir is None:
+        return {"status": "disabled", "path": None}
+    origin = _resolve_app_source(source)
+    if origin is None:
+        if required:
+            raise FileNotFoundError(
+                "L'application est absente de l'installateur : binaire LaaS introuvable."
+            )
+        return {"status": "absent", "path": None}
+    folder = Path(app_dir).expanduser().resolve() / "app"
+    folder.mkdir(parents=True, exist_ok=True)
+    destination = folder / APP_BINARY_NAME
+    if destination.exists():
+        return {"status": "already-present", "path": str(destination)}
+    shutil.copy2(origin, destination)
+    if os.name != "nt":
+        destination.chmod(0o755)
+    return {"status": "installed", "path": str(destination)}
+
+
+def configure_data_dir(data_dir: str | Path) -> Path:
+    """Écrit le dossier de données pour l'application, sans secret et sans base.
+
+    Le format est identique à celui lu par ``app/paths.read_data_dir()``.
+    """
+    if os.name == "nt":
+        base = Path(os.environ.get("APPDATA") or (Path.home() / "AppData" / "Roaming"))
+    else:
+        base = Path(os.environ.get("XDG_CONFIG_HOME") or (Path.home() / ".config"))
+    destination = base / "laas-version-app" / CONFIG_NAME
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(".tmp")
+    payload = {"data_dir": str(Path(data_dir).expanduser().resolve())}
+    temporary.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    if os.name != "nt":
+        os.chmod(temporary, 0o600)
+    os.replace(temporary, destination)
+    return destination
+
 
 # Schéma synchronisé avec reference/server-version/server.py. Aucune donnée.
 SCHEMA_SQL = """
@@ -176,14 +258,23 @@ def install(
     create_launcher: bool = True,
     create_shortcut: bool = True,
     desktop_dir: str | Path | None = None,
+    app_source: str | Path | None = None,
 ) -> dict:
-    """Crée une bibliothèque vide et ses comptes. Refuse d'écraser une base existante.
+    """Crée une bibliothèque vide, ses comptes et le lanceur de l'application.
 
-    Le lanceur est adapté à la plateforme : .bat sur Windows, .sh sur Linux.
-    Le raccourci est demandé par défaut juste après, avec le même lanceur.
-    Son échec éventuel est signalé mais ne détruit pas l'installation réussie.
+    Refuse d'écraser une base existante. Le lanceur est adapté à la plateforme :
+    .bat sur Windows, .sh sur Linux. Le raccourci est demandé par défaut juste
+    après, avec le même lanceur. Son échec éventuel est signalé mais ne détruit
+    pas l'installation réussie. Dans un binaire compilé, le vrai binaire
+    applicatif doit être embarqué, sinon l'installation est refusée avant toute
+    écriture.
     """
     cleaned_accounts = validate_accounts(accounts)
+    source = _resolve_app_source(app_source)
+    if getattr(sys, "frozen", False) and source is None:
+        raise FileNotFoundError(
+            "L'application est absente de l'installateur : binaire LaaS introuvable."
+        )
     data = Path(data_dir).expanduser().resolve()
     data.mkdir(parents=True, exist_ok=True)
 
@@ -191,7 +282,7 @@ def install(
     if db_path.exists():
         raise FileExistsError(f"Base déjà présente : {db_path}. Rien n'a été écrasé.")
 
-    with sqlite3.connect(db_path) as connection:
+    with closing(sqlite3.connect(db_path)) as connection:
         connection.executescript(SCHEMA_SQL)
         for identifier, password in cleaned_accounts:
             salt = secrets.token_bytes(SALT_BYTES)
@@ -208,8 +299,13 @@ def install(
         os.chmod(db_path, 0o600)
 
     marker = _write_marker(data, len(cleaned_accounts))
-    target_app_dir = Path(app_dir) if create_launcher else None
+    if create_launcher:
+        target_app_dir = Path(app_dir).expanduser() if app_dir is not None else default_app_dir()
+    else:
+        target_app_dir = None
     launcher = _write_launcher(target_app_dir)
+    application = install_app(target_app_dir, source=source, required=False)
+    config = configure_data_dir(data)
 
     if create_launcher and create_shortcut:
         shortcut = desktop_shortcut.create_shortcut(
@@ -223,6 +319,8 @@ def install(
         "database": str(db_path),
         "marker": str(marker),
         "launcher": str(launcher) if launcher else None,
+        "app": application,
+        "config": str(config),
         "shortcut": shortcut,
         "identifiers": [identifier for identifier, _ in cleaned_accounts],
     }
@@ -238,7 +336,7 @@ def verify_install(data_dir: str | Path, accounts: list[tuple[str, str]] | None 
     payload = json.loads(marker.read_text(encoding="utf-8"))
     if payload.get("schemaVersion") != MARKER_SCHEMA_VERSION:
         raise ValueError("Version du marqueur inattendue.")
-    with sqlite3.connect(db_path) as connection:
+    with closing(sqlite3.connect(db_path)) as connection:
         if connection.execute("PRAGMA quick_check").fetchone()[0] != "ok":
             raise sqlite3.DatabaseError("Contrôle d'intégrité échoué.")
         rows = connection.execute("SELECT email, salt, password_hash FROM users").fetchall()

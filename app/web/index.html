@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#08090c"><title>LaaS — Bibliothèque personnelle</title>
+  <link rel="icon" type="image/png" sizes="640x640" href="/assets/laas-icon.png?v=2"><link rel="shortcut icon" href="/assets/laas-icon.png?v=2"><link rel="apple-touch-icon" href="/assets/laas-icon.png?v=2">
+  <link rel="stylesheet" href="/assets/style.css">
+  <link rel="stylesheet" href="/assets/hig-foundation.css">
+  <link rel="stylesheet" href="/assets/ios-foundation.css">
+  <link rel="stylesheet" href="/assets/laas-glass.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="hig-glass ios-glass ios-sidebar sidebar">
+      <a class="brand" href="#" aria-label="LaaS accueil"><span class="brand-mark ios-squircle"><img src="/assets/laas-icon.png?v=3" alt=""></span><span><b>laas</b><small>ESPACE PERSONNEL</small></span></a>
+      <div class="side-label">BIBLIOTHÈQUE <button class="icon-button tiny" id="new-region" title="Créer un rayon">+</button></div>
+      <nav id="region-nav" class="region-nav"></nav>
+      <button class="create-region" id="create-region"><span>＋</span> Nouveau rayon</button>
+      <div class="sidebar-spacer"></div>
+      <div class="storage-card"><div class="storage-head"><span class="drive-dot"></span><span>Windows-SSD</span><span class="online-pill">LOCAL</span></div><div class="storage-caption">Tes documents restent sur cet ordinateur.</div><div class="storage-path">/Windows-SSD/laas</div></div>
+      <div class="profile"><div class="avatar">W</div><div><strong id="profile-email">Ma bibliothèque</strong><small>Stockage privé · local</small></div><button class="profile-menu" id="change-password" title="Modifier le mot de passe">···</button><button class="profile-menu" id="signout" title="Se déconnecter">↪</button></div>
+    </aside>
+    <main class="main-area">
+      <header class="hig-glass ios-glass ios-bar topbar"><div class="breadcrumbs"><span>Bibliothèque</span><b>/</b><span id="crumb-current">Vue d’ensemble</span></div><div class="top-actions"><label class="search"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg><input id="search" placeholder="Nom de fichier ou dossier…"><kbd>⌘ K</kbd></label><button class="round-button" id="theme-toggle" title="Changer le thème"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l-1.42 1.42m11.3-11.3 1.42-1.42"/></svg></button><button class="upload-top" id="upload-top"><span>↑</span> Importer</button></div></header>
+      <section class="content" id="content"></section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+  <dialog id="modal"><form method="dialog" id="modal-form"><button class="modal-x" value="cancel" aria-label="Fermer">×</button><div class="modal-icon" id="modal-icon">✦</div><h2 id="modal-title"></h2><p id="modal-copy"></p><div id="modal-fields"></div><div class="modal-actions"><button class="secondary-button" value="cancel">Annuler</button><button class="primary-button" id="modal-submit" value="default">Créer</button></div></form></dialog>
+  <dialog id="collection-icon-viewer" class="collection-icon-viewer" aria-label="Aperçu de l’icône">
+    <button class="collection-icon-viewer-close" type="button" aria-label="Fermer l’aperçu">×</button>
+    <img id="collection-icon-preview" alt="">
+  </dialog>
+  <input id="file-picker" type="file" multiple hidden>
+  <div id="auth-screen" class="auth-screen" hidden><form id="auth-form" class="auth-card"><div class="brand-mark auth-mark ios-squircle"><img src="/assets/laas-icon.png?v=3" alt="Oiseau de Laas"></div><div class="eyebrow">BIBLIOTHÈQUE PERSONNELLE</div><h1 id="auth-title">Bienvenue</h1><p id="auth-copy">Connecte-toi pour retrouver tes documents.</p><label class="field-label" for="auth-email">Adresse e-mail</label><input id="auth-email" class="field-input" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nom@exemple.invalid" required><label class="field-label" for="auth-password">Mot de passe Laas</label><input id="auth-password" class="field-input" type="password" minlength="10" autocomplete="current-password" required><div id="auth-help" class="helper"></div><button id="auth-submit" class="primary-button auth-submit" type="submit">Ouvrir ma bibliothèque</button><button id="auth-mode-toggle" class="auth-mode-toggle" type="button">Première connexion ? Créer un accès</button><div class="auth-local">Le serveur accepte uniquement les comptes autorisés.</div></form></div>
+  <script src="/assets/app.js?v=20261027-agents9"></script>
+  <script src="/assets/spatial-glass.js" defer></script>
+  </body></html>

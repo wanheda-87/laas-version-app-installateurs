@@ -2,11 +2,12 @@ LAAS VERSION APP - TELECHARGEMENTS
 
 Windows : telechargez setup.exe, double-cliquez, cliquez sur Suivant.
 Linux   : telechargez le .AppImage, autorisez l'execution, double-cliquez.
+          Au premier clic, l'assistant s'ouvre ; ensuite, la bibliotheque s'ouvre.
 
 Choisissez 1 a 3 comptes avec un mot de passe chacun, et ne les oubliez pas.
 Aucun code a taper, aucun compte en ligne, aucun serveur, aucun reseau.
 
-Les fichiers sont dans la section Releases de ce depot.
+Le raccourci "LaaS Version App" ouvre directement l'interface : rayons, etageres,
+poches, import de documents, recherche, lecture et themes.
 
-Limite : l'installateur prepare la bibliotheque et le raccourci. L'interface de
-l'application n'est pas encore incluse dans ce paquet.
+Les fichiers sont dans la section Releases de ce depot.

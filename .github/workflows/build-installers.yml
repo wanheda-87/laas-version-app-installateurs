@@ -2,6 +2,8 @@ name: Construire les installateurs LaaS
 
 # Un seul depôt public : les vrais binaires sont compilés par GitHub, puis
 # publiés dans une Release téléchargeable. Aucun secret n'est nécessaire.
+# L'interface réelle est embarquée dans l'application, elle-même embarquée
+# dans l'installateur : aucun serveur, aucun port, aucun appel réseau au runtime.
 on:
   push:
     tags:
@@ -13,19 +15,42 @@ permissions:
 
 jobs:
   windows:
-    name: Windows — setup.exe
+    name: Windows — setup.exe avec l'application
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Installer PyInstaller
+      - name: Installer PyInstaller et PySide6
+        run: py -m pip install pyinstaller PySide6==6.10.2
+      - name: Vérifier les sources sans donnée ni secret
+        shell: pwsh
+        run: |
+          $interdits = @('*.sqlite', '*.sqlite3', '*.db', '*.wal', '*.shm', 'library-id.json', 'laas.local.json')
+          foreach ($motif in $interdits) {
+            $trouve = Get-ChildItem -Recurse -File -Filter $motif -ErrorAction SilentlyContinue
+            if ($trouve) { throw "Fichier interdit versionné : $motif" }
+          }
+      - name: Compiler la vraie application
+        run: >
+          py -m PyInstaller --noconfirm --onefile --noconsole
+          --name laas-version-app --distpath build-app --workpath build-app-work
+          --specpath build-app-spec --paths app
+          --add-data "app\web;web" app\laas_app.py
+      - name: Vérifier l'application Windows
+        shell: pwsh
+        run: |
+          $file = "build-app/laas-version-app.exe"
+          if (-not (Test-Path $file)) { throw "Application absente" }
+          $bytes = [System.IO.File]::ReadAllBytes($file)[0..1]
+          if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw "En-tête PE invalide" }
+          Get-Item $file | Select-Object Name, Length
+      - name: Compiler le vrai setup.exe avec l'application embarquée
         working-directory: installer
-        run: py -m pip install pyinstaller
-      - name: Compiler le vrai setup.exe
-        working-directory: installer
-        run: py -m PyInstaller --onefile --noconsole --name setup setup.py
+        run: >
+          py -m PyInstaller --noconfirm --onefile --noconsole --name setup
+          --add-binary "..\build-app\laas-version-app.exe;app" setup.py
       - name: Vérifier le binaire
         working-directory: installer
         shell: pwsh
@@ -35,6 +60,20 @@ jobs:
           $bytes = [System.IO.File]::ReadAllBytes($file)[0..1]
           if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw "En-tête PE invalide" }
           Get-Item $file | Select-Object Name, Length
+      - name: Essai d'installation réel en clics (sans raccourci sur le runner)
+        shell: pwsh
+        run: |
+          $data = Join-Path $env:RUNNER_TEMP 'laas-donnees-essai'
+          $app = Join-Path $env:RUNNER_TEMP 'laas-app-essai'
+          Remove-Item -Recurse -Force $data,$app -ErrorAction SilentlyContinue
+          & "installer/dist/setup.exe" --headless --data-dir $data --app-dir $app `
+            --account "lecteur@example.invalid:motdepasse-long-1" --no-shortcut
+          if (-not (Test-Path (Join-Path $app 'app\laas-version-app.exe'))) {
+            throw "L'application n'a pas été installée"
+          }
+          if (-not (Test-Path (Join-Path $env:APPDATA 'laas-version-app\paths.json'))) {
+            throw "La configuration du dossier de données n'a pas été écrite"
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: windows
@@ -43,7 +82,7 @@ jobs:
           retention-days: 7
 
   linux:
-    name: Linux — binaire et AppImage
+    name: Linux — binaire, application et AppImage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,19 +90,53 @@ jobs:
         run: |
           set -eu
           sudo apt-get update
-          sudo apt-get install -y python3 python3-tk python3-pip
-          python3 -m pip install --user pyinstaller
-      - name: Compiler le binaire autonome
+          sudo apt-get install -y python3 python3-tk python3-pip file
+          python3 -m pip install --user pyinstaller PySide6==6.10.2
+      - name: Aucune donnée ni secret dans les sources
+        run: |
+          set -eu
+          if find . -type f \( -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' \
+              -o -name '*.wal' -o -name '*.shm' -o -name 'library-id.json' \
+              -o -name 'laas.local.json' \) | grep .; then
+            echo "Fichier interdit versionné" >&2
+            exit 1
+          fi
+      - name: Compiler la vraie application
+        run: |
+          set -eu
+          python3 -m PyInstaller --noconfirm --onefile --name laas-version-app \
+            --distpath build-app --workpath build-app-work --specpath build-app-spec \
+            --paths app --add-data "app/web:web" app/laas_app.py
+          file build-app/laas-version-app | grep -q ELF
+      - name: Compiler le binaire d'installation avec l'application embarquée
         working-directory: installer
-        run: python3 -m PyInstaller --onefile --name setup setup.py
-      - name: Construire l'AppImage
+        run: |
+          set -eu
+          python3 -m PyInstaller --noconfirm --onefile --name setup \
+            --add-binary "../build-app/laas-version-app:app" setup.py
+          file dist/setup | grep -q ELF
+      - name: Essai d'installation réel en clics
+        env:
+          XDG_CONFIG_HOME: ${{ runner.temp }}/laas-config-essai
+        run: |
+          set -eu
+          data="$RUNNER_TEMP/laas-donnees-essai"
+          app="$RUNNER_TEMP/laas-app-essai"
+          rm -rf "$data" "$app" "$XDG_CONFIG_HOME"
+          installer/dist/setup --headless --data-dir "$data" --app-dir "$app" \
+            --account "lecteur@example.invalid:motdepasse-long-1" --no-shortcut
+          test -x "$app/app/laas-version-app"
+          test -f "$XDG_CONFIG_HOME/laas-version-app/paths.json"
+          test ! -e "$app/Lancer LaaS Version App.bat"
+      - name: Construire l'AppImage (installateur puis application au premier clic)
         run: |
           set -eu
           APPDIR="LaaS-Version-App-x86_64.AppDir"
           mkdir -p "$APPDIR/usr/bin" \
                    "$APPDIR/usr/share/applications" \
                    "$APPDIR/usr/share/icons/hicolor/256x256/apps"
-          cp installer/dist/setup "$APPDIR/usr/bin/laas-version-app"
+          cp installer/dist/setup "$APPDIR/usr/bin/laas-version-app-setup"
+          cp build-app/laas-version-app "$APPDIR/usr/bin/laas-version-app"
           cp assets/laas-icon.png \
              "$APPDIR/usr/share/icons/hicolor/256x256/apps/laas-version-app.png"
           # appimagetool cherche aussi l'icone a la racine de l'AppDir.
@@ -71,8 +144,21 @@ jobs:
           cp installer/laas-version-app.desktop \
              "$APPDIR/usr/share/applications/laas-version-app.desktop"
           cp installer/laas-version-app.desktop "$APPDIR/laas-version-app.desktop"
-          printf '%s\n' '#!/bin/sh' 'exec "$APPDIR/usr/bin/laas-version-app" "$@"' > "$APPDIR/AppRun"
-          chmod +x "$APPDIR/AppRun" "$APPDIR/usr/bin/laas-version-app"
+          cat > "$APPDIR/AppRun" <<'EOF'
+          #!/bin/sh
+          set -eu
+          APPDIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+          CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/laas-version-app/paths.json"
+          if [ ! -f "$CONFIG" ]; then
+            "$APPDIR/usr/bin/laas-version-app-setup" "$@" || exit 1
+          fi
+          # WebEngine ne peut pas activer son bac a sable dans une AppImage.
+          QTWEBENGINE_DISABLE_SANDBOX=1
+          export QTWEBENGINE_DISABLE_SANDBOX
+          exec "$APPDIR/usr/bin/laas-version-app" "$@"
+          EOF
+          chmod +x "$APPDIR/AppRun" "$APPDIR/usr/bin/laas-version-app" \
+                   "$APPDIR/usr/bin/laas-version-app-setup"
           curl -fsSL -o appimagetool.AppImage \
             https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool.AppImage

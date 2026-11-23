@@ -1,0 +1,313 @@
+/* ============================================================
+   ios-foundation.css — couche « iOS 18 / visionOS » commune
+   v2 — 23 novembre 2026 — CSS autonome, aucune dépendance.
+
+   Matériaux : verre dépoli lourd, biseau spéculaire 1px, ombres
+   diffuses multicouches, reflet radial qui suit le curseur,
+   squircle 22 %, transitions ressort.
+
+   Le contrat SL-1 §C1 reste respecté : documents, chiffres,
+   graphiques et formulaires sont mis sur un fond opaque via
+   .ios-content ; le verre habille la navigation, les barres
+   d'outils, les contrôles et les coques de widgets vides.
+   ============================================================ */
+
+:root,
+html.light,
+.light,
+[data-theme="light"] {
+  --ios-blue:        #0a84ff;
+  --ios-green:       #30d158;
+  --ios-orange:      #ff9f0a;
+  --ios-red:         #ff453a;
+  --ios-purple:      #bf5af2;
+
+  --ios-glass:        rgba(20, 20, 25, .45);
+  --ios-glass-strong: rgba(24, 24, 32, .62);
+  --ios-glass-inset:  rgba(255, 255, 255, .07);
+  --ios-edge-hi:      rgba(255, 255, 255, .35);
+  --ios-edge-lo:      rgba(255, 255, 255, .05);
+  --ios-shadow:       0 20px 40px rgba(0, 0, 0, .25),
+                      0 4px 14px rgba(0, 0, 0, .18),
+                      inset 0 1px 0 rgba(255, 255, 255, .24),
+                      inset 0 -1px 0 rgba(0, 0, 0, .10);
+  --ios-blur:         blur(24px) saturate(180%);
+  --ios-radius:       22px;
+  --ios-radius-widget:24px;
+  --ios-spring:       cubic-bezier(.25, 1, .5, 1);
+  --ios-hairline:     color-mix(in srgb, var(--hig-label) 14%, transparent);
+  --ios-focus:        0 0 0 4px color-mix(in srgb, var(--ios-blue) 55%, transparent);
+}
+
+html.light,
+.light,
+[data-theme="light"] {
+  --ios-glass:        rgba(255, 255, 255, .12);
+  --ios-glass-strong: rgba(255, 255, 255, .20);
+  --ios-glass-inset:  rgba(255, 255, 255, .14);
+  --ios-edge-hi:      rgba(255, 255, 255, .55);
+  --ios-edge-lo:      rgba(255, 255, 255, .10);
+  --ios-shadow:       0 20px 40px rgba(4, 8, 24, .26),
+                      0 4px 14px rgba(4, 8, 24, .14),
+                      inset 0 1px 0 rgba(255, 255, 255, .45);
+}
+
+/* ------------------------------------------------------------
+   1. Matière verre lourd
+   ------------------------------------------------------------ */
+.ios-glass,
+.ios-widget,
+.ios-dock {
+  position: relative;
+  isolation: isolate;
+  background: var(--ios-glass);
+  -webkit-backdrop-filter: var(--ios-blur);
+  backdrop-filter: var(--ios-blur);
+  box-shadow: var(--ios-shadow);
+  border-radius: var(--ios-radius);
+  transition: transform .42s var(--ios-spring), box-shadow .42s var(--ios-spring);
+}
+
+/* Biseau lumineux : bordure interne 1px, dégradé blanc haut/gauche. */
+.ios-glass::before,
+.ios-widget::before,
+.ios-dock::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit; padding: 1px;
+  background: linear-gradient(135deg,
+    var(--ios-edge-hi), var(--ios-edge-lo) 38%, transparent 62%,
+    color-mix(in srgb, var(--ios-edge-hi) 40%, transparent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none; z-index: 3;
+}
+
+/* Reflet radial : --ios-x / --ios-y sont posés par le JS local. */
+.ios-glass::after,
+.ios-widget::after,
+.ios-dock::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(520px circle at var(--ios-x, 50%) var(--ios-y, 0%),
+    color-mix(in srgb, white 18%, transparent), transparent 45%);
+  opacity: .35;
+  transition: opacity .4s var(--ios-spring);
+  pointer-events: none; z-index: 2;
+}
+.ios-glass:hover::after,
+.ios-widget:hover::after,
+.ios-dock:hover::after { opacity: 1; }
+
+/* Contenu souverain : opaque, au-dessus du verre (SL-1 §C1). */
+.ios-content {
+  background: color-mix(in srgb, var(--hig-canvas) 96%, transparent);
+  border-radius: 14px;
+}
+
+/* ------------------------------------------------------------
+   2. Barres de navigation / Dock
+   ------------------------------------------------------------ */
+.ios-bar {
+  position: sticky;
+  top: max(10px, env(safe-area-inset-top));
+  z-index: 30;
+  margin: 10px 12px 18px;
+  padding: 10px 18px;
+  min-height: 56px;
+  border-radius: var(--ios-radius);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ios-tabbar,
+.ios-dock {
+  position: fixed !important;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  inset: auto !important;
+  width: auto;
+  height: auto;
+  min-height: 62px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--ios-glass-strong);
+}
+.ios-tabbar > *,
+.ios-dock > * { transition: transform .42s var(--ios-spring); }
+.ios-sidebar {
+  margin: 12px 0 12px 12px;
+  border-radius: var(--ios-radius);
+  padding: 14px;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------
+   3. Typographie et listes groupées
+   ------------------------------------------------------------ */
+.ios-title {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  font-size: clamp(28px, 5vw, 34px);
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+.ios-headline { font-size: 20px; font-weight: 650; letter-spacing: -.012em; }
+.ios-caption { font-size: 12px; font-weight: 500; letter-spacing: .02em; color: var(--hig-label-2); }
+.ios-hairline { height: 1px; background: var(--ios-hairline); border: 0; }
+.ios-grouped {
+  background: color-mix(in srgb, var(--hig-surface) 94%, transparent);
+  border: 1px solid var(--ios-hairline);
+  border-radius: var(--ios-radius-widget);
+  overflow: hidden;
+}
+.ios-row {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 44px; padding: 10px 16px; position: relative;
+}
+.ios-row + .ios-row::before {
+  content: ""; position: absolute; top: 0; left: 16px; right: 0;
+  height: 1px; background: var(--ios-hairline);
+}
+.ios-chevron::after {
+  content: ""; width: 7px; height: 7px; margin-left: auto;
+  border-top: 2px solid var(--hig-label-3);
+  border-right: 2px solid var(--hig-label-3);
+  transform: rotate(45deg); opacity: .65;
+}
+
+/* ------------------------------------------------------------
+   4. Widgets modulaires : coque en verre, intérieur opaque
+   ------------------------------------------------------------ */
+.ios-widget {
+  border-radius: var(--ios-radius-widget);
+  padding: 20px;
+}
+.ios-widget:hover { transform: translateY(-5px) scale(1.01); }
+.card,
+.stat-card,
+.unit-card,
+.auth-card,
+.storage-card {
+  border-radius: var(--ios-radius-widget);
+  background: var(--ios-glass);
+  -webkit-backdrop-filter: var(--ios-blur);
+  backdrop-filter: var(--ios-blur);
+  box-shadow: var(--ios-shadow);
+  transition: transform .42s var(--ios-spring), box-shadow .42s var(--ios-spring);
+}
+.card:hover,
+.stat-card:hover,
+.unit-card:hover { transform: translateY(-5px) scale(1.01); }
+
+/* Icônes squircle (courbe continue approximée par 22 %). */
+.ios-squircle {
+  border-radius: 22%;
+  overflow: hidden;
+  box-shadow: 0 10px 22px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.30);
+}
+.ios-squircle img,
+.ios-squircle svg { display: block; width: 100%; height: 100%; }
+
+/* ------------------------------------------------------------
+   5. Contrôles iOS
+   ------------------------------------------------------------ */
+.ios-button {
+  min-height: 44px; padding: 10px 20px;
+  border: 1px solid var(--ios-hairline);
+  border-radius: 999px;
+  background: var(--ios-glass-strong);
+  -webkit-backdrop-filter: var(--ios-blur);
+  backdrop-filter: var(--ios-blur);
+  box-shadow: var(--ios-shadow);
+  color: var(--hig-label);
+  font: inherit; font-weight: 600; cursor: pointer;
+  transition: transform .42s var(--ios-spring), filter .42s var(--ios-spring);
+}
+.ios-button:hover { filter: brightness(1.08); transform: translateY(-2px); }
+.ios-button:active { transform: scale(.96); }
+.ios-button.primary,
+.ios-button.ios-primary { background: var(--ios-blue); border-color: transparent; color: #fff; }
+.ios-button.destructive { background: var(--ios-red); border-color: transparent; color: #fff; }
+.ios-segmented {
+  display: inline-flex; gap: 2px; min-height: 40px; padding: 3px;
+  border-radius: 12px; background: var(--ios-glass-strong);
+  -webkit-backdrop-filter: var(--ios-blur); backdrop-filter: var(--ios-blur);
+  box-shadow: inset 0 0 0 1px var(--ios-hairline);
+}
+.ios-segmented > * {
+  min-height: 34px; padding: 6px 14px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--hig-label-2); font: inherit;
+  font-weight: 600; cursor: pointer;
+}
+.ios-segmented > [aria-selected="true"],
+.ios-segmented > .active,
+.ios-segmented > [aria-pressed="true"] {
+  background: var(--hig-raised); color: var(--hig-label);
+  box-shadow: 0 1px 4px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.16);
+}
+.ios-badge {
+  display: inline-flex; align-items: center; min-height: 22px;
+  padding: 2px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--ios-blue) 22%, transparent);
+  color: var(--hig-label); font-size: 12px; font-weight: 600;
+}
+.ios-badge.success { background: color-mix(in srgb, var(--ios-green) 24%, transparent); }
+.ios-badge.warning { background: color-mix(in srgb, var(--ios-orange) 26%, transparent); }
+.ios-badge.danger  { background: color-mix(in srgb, var(--ios-red) 24%, transparent); }
+
+/* ------------------------------------------------------------
+   6. Accessibilité
+   ------------------------------------------------------------ */
+:where(.ios-glass, .ios-widget, .ios-dock, .ios-button,
+       .ios-segmented > *, .ios-row):focus-visible {
+  outline: 3px solid var(--ios-blue);
+  outline-offset: 2px;
+  box-shadow: var(--ios-focus);
+}
+@media (pointer: coarse) {
+  .ios-button, .ios-segmented > *, .ios-row,
+  .ios-bar a, .ios-bar button,
+  .ios-tabbar a, .ios-tabbar button,
+  .ios-dock a, .ios-dock button { min-height: 44px; min-width: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ios-glass, .ios-widget, .ios-dock, .card, .stat-card, .unit-card,
+  .ios-button, .ios-button:hover, .ios-button:active { transition: none; transform: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .ios-glass, .ios-widget, .ios-dock, .card, .stat-card, .unit-card,
+  .auth-card, .storage-card, .ios-button, .ios-segmented {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: color-mix(in srgb, var(--hig-raised) 96%, transparent);
+  }
+  .ios-glass::after, .ios-widget::after, .ios-dock::after { display: none; }
+}
+@media (prefers-contrast: more) {
+  .ios-glass, .ios-widget, .ios-dock, .card, .stat-card, .unit-card,
+  .ios-button, .ios-segmented, .ios-grouped { border: 2px solid var(--hig-label); }
+  .ios-hairline, .ios-row + .ios-row::before { background: var(--hig-label); height: 2px; }
+}
+@media (forced-colors: active) {
+  .ios-glass, .ios-widget, .ios-dock, .card, .stat-card, .unit-card,
+  .auth-card, .storage-card, .ios-button, .ios-segmented, .ios-grouped {
+    background: Canvas !important;
+    border: 1px solid CanvasText !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .ios-glass::before, .ios-glass::after,
+  .ios-widget::before, .ios-widget::after,
+  .ios-dock::before, .ios-dock::after { display: none; }
+}
