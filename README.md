@@ -14,6 +14,9 @@ suis les écrans.
 
 Les fichiers sont dans la section **Releases** à droite de cette page, sur la dernière version.
 
+Lien direct vers la version actuelle :
+https://github.com/wanheda-87/laas-version-app-installateurs/releases/tag/v1.0.0
+
 ## 2. Pendant l’installation
 
 L’assistant te demande **1, 2 ou 3 comptes** : un identifiant et un mot de passe pour chaque
