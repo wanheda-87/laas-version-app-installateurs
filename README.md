@@ -16,7 +16,7 @@ l’application, sans serveur et sans navigateur.
 Les fichiers sont dans la section **Releases** à droite de cette page, sur la dernière version.
 
 Lien direct vers la page de la version actuelle :
-https://github.com/wanheda-87/laas-version-app-installateurs/releases/tag/v1.1.2
+https://github.com/wanheda-87/laas-version-app-installateurs/releases/tag/v1.1.3
 
 ## 2. Pendant l’installation
 
