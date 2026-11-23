@@ -102,7 +102,7 @@ jobs:
           set -eu
           mkdir -p a-publier
           cp artifacts/windows/setup.exe a-publier/setup.exe
-          cp artifacts/linux/setup a-publier/setup-linux
+          cp artifacts/linux/installer/dist/setup a-publier/setup-linux
           cp artifacts/linux/LaaS-Version-App-x86_64.AppImage a-publier/
           cd a-publier
           sha256sum setup.exe setup-linux LaaS-Version-App-x86_64.AppImage > SHA256SUMS.txt
