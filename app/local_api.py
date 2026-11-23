@@ -35,6 +35,7 @@ ICON_DIR_NAME = "collection-icons"
 MAX_JSON_BODY = 2_000_000
 MAX_UPLOAD_BODY = 1_073_741_824
 PBKDF2_ROUNDS = 310_000
+MIN_PASSWORD_LENGTH = 4
 SESSION_LIFETIME = 43_200
 SESSION_IDLE = 3_600
 LOGIN_MAX_FAILURES = 5
@@ -363,8 +364,10 @@ class LocalApi:
 
     def _setup(self, body: bytes) -> ApiResponse:
         email, password = self._identity(self._body_json(body))
-        if len(password) < 10:
-            raise ApiError("Le mot de passe doit contenir au moins 10 caractères.")
+        if len(password) < MIN_PASSWORD_LENGTH:
+            raise ApiError(
+                f"Le mot de passe doit contenir au moins {MIN_PASSWORD_LENGTH} caractères."
+            )
         with self.db() as con:
             if con.execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone():
                 return _error("Ce compte existe déjà.", 409)
@@ -404,8 +407,10 @@ class LocalApi:
         payload = self._body_json(body)
         old = str(payload.get("old_password", ""))
         new = str(payload.get("password", ""))
-        if len(new) < 10:
-            raise ApiError("Le mot de passe doit contenir au moins 10 caractères.")
+        if len(new) < MIN_PASSWORD_LENGTH:
+            raise ApiError(
+                f"Le mot de passe doit contenir au moins {MIN_PASSWORD_LENGTH} caractères."
+            )
         with self.db() as con:
             row = con.execute(
                 "SELECT salt,password_hash FROM users WHERE email=?", (user,)

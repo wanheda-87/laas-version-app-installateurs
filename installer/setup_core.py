@@ -13,7 +13,6 @@ import hashlib
 import hmac
 import json
 import os
-import re
 import secrets
 import shutil
 import sqlite3
@@ -32,10 +31,7 @@ CONFIG_NAME = "paths.json"
 APP_BINARY_NAME = "laas-version-app.exe" if os.name == "nt" else "laas-version-app"
 PBKDF2_ROUNDS = 310_000
 SALT_BYTES = 16
-MIN_PASSWORD_LENGTH = 10
-
-EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-USERNAME_RE = re.compile(r"^[A-Za-z0-9_.-]{3,64}$")
+MIN_PASSWORD_LENGTH = 4
 
 
 def default_data_dir() -> Path:
@@ -180,13 +176,15 @@ LAUNCHER_TEMPLATE = desktop_shortcut.WINDOWS_LAUNCHER_TEMPLATE
 
 
 def normalize_identifier(raw: str) -> str:
-    """Accepte une adresse e-mail ou un nom d'utilisateur simple."""
+    """Accepte tout identifiant texte non vide : e-mail, pseudo, numéro, etc.
+
+    Aucune forme n'est imposée : seul le vide est refusé, car un identifiant
+    vide ne pourrait pas être retapé à la connexion. La casse est normalisée
+    pour que l'installateur et l'application retrouvent le même compte.
+    """
     value = str(raw or "").strip().lower()
-    if not (EMAIL_RE.fullmatch(value) or USERNAME_RE.fullmatch(value)):
-        raise ValueError(
-            "Identifiant invalide : utilise une adresse e-mail ou un nom de 3 à 64 "
-            "caractères (lettres, chiffres, point, tiret, soulignement)."
-        )
+    if not value:
+        raise ValueError("Identifiant requis : saisis au moins un caractère.")
     return value
 
 

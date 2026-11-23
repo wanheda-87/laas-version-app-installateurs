@@ -46,7 +46,8 @@ LaaSVersionApp/Lancer LaaS Version App.sh      (Linux)
 Aucun document, aucune photo, aucun compte en ligne n’est ajouté. L’application ne se connecte
 pas à Internet, n’ouvre aucun port et ne demande aucun compte tiers. La recherche, la lecture
 des documents, les rayons, étagères, poches et les thèmes fonctionnent hors ligne. Le
-transcodage vidéo et la console d’administration ne sont pas inclus.
+transcodage vidéo, la rubrique Administration et la console d’administration ne sont pas inclus.
+L’identifiant est un texte libre et le mot de passe demande 4 caractères minimum.
 
 L’installateur extrait temporairement l’application : prévoir environ **1 Go d’espace libre**
 pendant l’installation (le fichier téléchargé fait lui-même environ 230 à 465 Mo selon le

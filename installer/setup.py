@@ -230,9 +230,9 @@ def run_gui(args: argparse.Namespace) -> int:
                 for index in range(self.count.get()):
                     box = ttk.LabelFrame(self.frame, text=f"Compte {index + 1}", padding=10)
                     box.pack(fill="x", pady=8)
-                    ttk.Label(box, text="E-mail ou nom d'utilisateur").pack(anchor="w")
+                    ttk.Label(box, text="Identifiant (texte libre, e-mail ou autre)").pack(anchor="w")
                     ttk.Entry(box, textvariable=self.identifiers[index]).pack(fill="x", pady=(2, 8))
-                    ttk.Label(box, text="Mot de passe (10 caractères minimum)").pack(anchor="w")
+                    ttk.Label(box, text="Mot de passe (4 caractères minimum)").pack(anchor="w")
                     ttk.Entry(box, textvariable=self.passwords[index], show="*").pack(fill="x", pady=2)
                     ttk.Label(box, text="Confirmer le mot de passe").pack(anchor="w")
                     ttk.Entry(box, textvariable=self.confirmations[index], show="*").pack(fill="x", pady=2)

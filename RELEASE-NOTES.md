@@ -13,4 +13,5 @@ Le raccourci créé ouvre directement l'interface existante : connexion, région
 poches, import de documents, recherche, lecture et thèmes.
 
 Aucun réseau, aucun port, aucun serveur et aucun compte en ligne ne sont nécessaires.
-Le transcodage vidéo et la console d'administration sont exclus.
+Le transcodage vidéo, la rubrique Administration et la console d'administration sont exclus.
+L'identifiant est un texte libre et le mot de passe demande 4 caractères minimum.

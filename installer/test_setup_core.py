@@ -69,13 +69,29 @@ class SetupCoreTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             setup_core.install(data, comptes(2), create_launcher=False)
 
-    def test_short_password_and_bad_identifier_are_refused(self) -> None:
+    def test_password_minimum_is_four_and_identifier_is_free_text(self) -> None:
         with self.assertRaises(ValueError):
-            setup_core.validate_password("court")
+            setup_core.validate_password("abc")
+        self.assertEqual(setup_core.validate_password("abcd"), "abcd")
+        for identifiant, attendu in (
+            (" Identifiant avec espaces ", "identifiant avec espaces"),
+            ("a@b", "a@b"),
+            ("Jean Dupont 42", "jean dupont 42"),
+            ("+33 1 23 45 67 89", "+33 1 23 45 67 89"),
+        ):
+            with self.subTest(identifiant=identifiant):
+                self.assertEqual(setup_core.normalize_identifier(identifiant), attendu)
         with self.assertRaises(ValueError):
-            setup_core.normalize_identifier(" Identifiant avec espaces ")
-        with self.assertRaises(ValueError):
-            setup_core.normalize_identifier("a@b")
+            setup_core.normalize_identifier("   ")
+
+    def test_install_accepts_free_text_identifier_and_short_password(self) -> None:
+        comptes_libres = [("mon pseudo", "abcd")]
+        data = self.root / "libre"
+        info = setup_core.install(data, comptes_libres, create_launcher=False)
+        self.assertEqual(info["identifiers"], ["mon pseudo"])
+        verification = setup_core.verify_install(data, comptes_libres)
+        self.assertEqual(verification["accounts"], 1)
+        self.assertEqual(verification["documents"], 0)
 
     def test_duplicate_identifier_is_refused(self) -> None:
         informes = [("profil-unique", "motdepasse-long-1"), ("PROFIL-UNIQUE", "motdepasse-long-2")]
